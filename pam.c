@@ -64,7 +64,7 @@ pamprompt(const char *msg, int echo_on, int *ret)
 	int flags = RPP_REQUIRE_TTY | (echo_on ? RPP_ECHO_ON : RPP_ECHO_OFF);
 
 	/* overwrite default prompt if it matches "Password:[ ]" */
-	if (strncmp(msg,"Contraseña:", 9) == 0 &&
+	if (strncmp(msg,"Password:", 9) == 0 &&
 		(msg[9] == '\0' || (msg[9] == ' ' && msg[10] == '\0')))
 		prompt = doas_prompt;
 	else
