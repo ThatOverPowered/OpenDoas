@@ -278,12 +278,7 @@ pamauth(const char *user, const char *myname, int interactive, int nopass, int p
 		if (!interactive)
 			errx(1, "Se requiere autenticación");
 
-		/* doas style prompt for pam */
-		char host[HOST_NAME_MAX + 1];
-		if (gethostname(host, sizeof(host)))
-			snprintf(host, sizeof(host), "?");
-		snprintf(doas_prompt, sizeof(doas_prompt),
-			"\rdoas (%.32s@%.32s) contraseña: ", myname, host);
+		snprintf(doas_prompt, sizeof(doas_prompt), "Contraseña: ");
 
 		/* authenticate */
 		for (int i = 0; i < AUTH_RETRIES; i++) {
