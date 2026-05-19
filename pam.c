@@ -281,20 +281,11 @@ pamauth(const char *user, const char *myname, int interactive, int nopass, int p
 		snprintf(doas_prompt, sizeof(doas_prompt), "Contraseña: ");
 
 		/* authenticate */
-		for (int i = 0; i < AUTH_RETRIES; i++) {
-			ret = pam_authenticate(pamh, 0);
-			if (ret != PAM_SUCCESS) {
-				syslog(LOG_AUTHPRIV | LOG_NOTICE, "autenticación fallida para %s", myname);
-
-				if (i == AUTH_RETRIES - 1) {
-					pamcleanup(ret, sess, cred);
-					errx(1, "Fallo de autenticación");
-				}
-				else
-					warnx("Fallo de autenticación");
-			}
-			else
-				break;
+		ret = pam_authenticate(pamh, 0);
+		if (ret != PAM_SUCCESS) {
+			pamcleanup(ret, sess, cred);
+			syslog(LOG_AUTHPRIV | LOG_NOTICE, "autenticación fallida para %s", myname);
+			errx(1, "Fallo de autenticación");
 		}
 	}
 

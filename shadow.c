@@ -75,28 +75,22 @@ shadowauth(const char *myname, int persist)
 		errx(1, "Autenticación fallida");
 	}
 
-	for (int i = 0; i < AUTH_RETRIES; i++) {
-		response = readpassphrase(challenge, rbuf, sizeof(rbuf), RPP_REQUIRE_TTY);
-		if (response == NULL && errno == ENOTTY) {
-			syslog(LOG_AUTHPRIV | LOG_NOTICE,
-				"se necesita tty para %s", myname);
-			errx(1, "se requiere un tty");
-		}
-		if (response == NULL)
-			err(1, "readpassphrase");
-		if ((encrypted = crypt(response, hash)) == NULL) {
-			explicit_bzero(rbuf, sizeof(rbuf));
-			(i == AUTH_RETRIES - 1) ? errx(1, "Autenticación fallida") : warnx("Autenticación fallida");
-		}
-		else {
-			explicit_bzero(rbuf, sizeof(rbuf));
-			if (strcmp(encrypted, hash) != 0) {
-				syslog(LOG_AUTHPRIV | LOG_NOTICE, "fallo de autenticación para %s", myname);
-				(i == AUTH_RETRIES - 1) ? errx(1, "Autenticación fallida") : warnx("Autenticación fallida");
-			}
-			else
-				break;
-		}
+	response = readpassphrase(challenge, rbuf, sizeof(rbuf), RPP_REQUIRE_TTY);
+	if (response == NULL && errno == ENOTTY) {
+		syslog(LOG_AUTHPRIV | LOG_NOTICE,
+			"se necesita tty para %s", myname);
+		errx(1, "se requiere un tty");
+	}
+	if (response == NULL)
+		err(1, "readpassphrase");
+	if ((encrypted = crypt(response, hash)) == NULL) {
+		explicit_bzero(rbuf, sizeof(rbuf));
+		errx(1, "Autenticación fallida");
+	}
+	explicit_bzero(rbuf, sizeof(rbuf));
+	if (strcmp(encrypted, hash) != 0) {
+		syslog(LOG_AUTHPRIV | LOG_NOTICE, "fallo de autenticación para %s", myname);
+		errx(1, "Autenticación fallida");
 	}
 
 #ifdef USE_TIMESTAMP
