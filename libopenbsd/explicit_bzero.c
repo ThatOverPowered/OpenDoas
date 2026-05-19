@@ -1,8 +1,8 @@
 /*	$OpenBSD: explicit_bzero.c,v 1.2 2014/06/10 04:17:37 deraadt Exp $ */
 /*
- * Public domain.
- * Written by Matthew Dempsky.
- */
+* Public domain.
+* Written by Matthew Dempsky.
+*/
 
 #include "config.h"
 

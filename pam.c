@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2015 Nathan Holstein <nathan.holstein@gmail.com>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+* Copyright (c) 2015 Nathan Holstein <nathan.holstein@gmail.com>
+*
+* Permission to use, copy, modify, and distribute this software for any
+* purpose with or without fee is hereby granted, provided that the above
+* copyright notice and this permission notice appear in all copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+* WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+* ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+* ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+* OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
 
 #include "config.h"
 
@@ -64,8 +64,8 @@ pamprompt(const char *msg, int echo_on, int *ret)
 	int flags = RPP_REQUIRE_TTY | (echo_on ? RPP_ECHO_ON : RPP_ECHO_OFF);
 
 	/* overwrite default prompt if it matches "Password:[ ]" */
-	if (strncmp(msg,"Password:", 9) == 0 &&
-	    (msg[9] == '\0' || (msg[9] == ' ' && msg[10] == '\0')))
+	if (strncmp(msg,"Contraseña:", 9) == 0 &&
+		(msg[9] == '\0' || (msg[9] == ' ' && msg[10] == '\0')))
 		prompt = doas_prompt;
 	else
 		prompt = msg;
@@ -91,7 +91,7 @@ pamconv(int nmsgs, const struct pam_message **msgs,
 	int ret;
 
 	if (!(rsp = calloc(nmsgs, sizeof(struct pam_response))))
-		err(1, "could not allocate pam_response");
+		err(1, "no se pudo asignar pam_response");
 
 	for (i = 0; i < nmsgs; i++) {
 		switch (style = msgs[i]->msg_style) {
@@ -109,7 +109,7 @@ pamconv(int nmsgs, const struct pam_message **msgs,
 			break;
 
 		default:
-			errx(1, "invalid PAM msg_style %d", style);
+			errx(1, "estilo de mensaje PAM no válido %d", style);
 		}
 	}
 
@@ -148,7 +148,7 @@ pamcleanup(int ret, int sess, int cred)
 		ret = pam_setcred(pamh, PAM_DELETE_CRED | PAM_SILENT);
 		if (ret != PAM_SUCCESS)
 			warn("pam_setcred(?, PAM_DELETE_CRED | PAM_SILENT): %s",
-			    pam_strerror(pamh, ret));
+				pam_strerror(pamh, ret));
 	}
 	pam_end(pamh, ret);
 }
@@ -163,7 +163,7 @@ watchsession(pid_t child, int sess, int cred)
 	/* block signals */
 	sigfillset(&sigs);
 	if (sigprocmask(SIG_BLOCK, &sigs, NULL)) {
-		warn("failed to block signals");
+		warn("no se pudieron bloquear las señales");
 		caught_signal = 1;
 		goto close;
 	}
@@ -176,11 +176,11 @@ watchsession(pid_t child, int sess, int cred)
 	/* unblock SIGTERM and SIGALRM to catch them */
 	sigemptyset(&sigs);
 	if (sigaddset(&sigs, SIGTERM) ||
-	    sigaddset(&sigs, SIGALRM) ||
-	    sigaddset(&sigs, SIGTSTP) ||
-	    sigaction(SIGTERM, &act, &oldact) ||
-	    sigprocmask(SIG_UNBLOCK, &sigs, NULL)) {
-		warn("failed to set signal handler");
+		sigaddset(&sigs, SIGALRM) ||
+		sigaddset(&sigs, SIGTSTP) ||
+		sigaction(SIGTERM, &act, &oldact) ||
+		sigprocmask(SIG_UNBLOCK, &sigs, NULL)) {
+		warn("no se pudo establecer el manejador de señal");
 		caught_signal = 1;
 		goto close;
 	}
@@ -189,7 +189,7 @@ watchsession(pid_t child, int sess, int cred)
 	if (waitpid(child, &status, 0) != -1) {
 		if (WIFSIGNALED(status)) {
 			fprintf(stderr, "%s%s\n", strsignal(WTERMSIG(status)),
-					WCOREDUMP(status) ? " (core dumped)" : "");
+					WCOREDUMP(status) ? " (volcado de núcleo)" : "");
 			status = WTERMSIG(status) + 128;
 		} else
 			status = WEXITSTATUS(status);
@@ -201,7 +201,7 @@ watchsession(pid_t child, int sess, int cred)
 
 close:
 	if (caught_signal && child != (pid_t)-1) {
-		fprintf(stderr, "\nSession terminated, killing shell\n");
+		fprintf(stderr, "\nSesión terminada, matando shell\n");
 		kill(child, SIGTERM);
 	}
 
@@ -212,7 +212,7 @@ close:
 			/* kill child */
 			sleep(2);
 			kill(child, SIGKILL);
-			fprintf(stderr, " ...killed.\n");
+			fprintf(stderr, " ...matado.\n");
 		}
 
 		/* unblock cached signal and resend */
@@ -244,17 +244,17 @@ pamauth(const char *user, const char *myname, int interactive, int nopass, int p
 #endif
 
 	if (!user || !myname)
-		errx(1, "Authentication failed");
+		errx(1, "Fallo de autenticación");
 
 	ret = pam_start(PAM_SERVICE_NAME, myname, &conv, &pamh);
 	if (ret != PAM_SUCCESS)
-		errx(1, "pam_start(\"%s\", \"%s\", ?, ?): failed",
-		    PAM_SERVICE_NAME, myname);
+		errx(1, "pam_start(\"%s\", \"%s\", ?, ?): falló",
+			PAM_SERVICE_NAME, myname);
 
 	ret = pam_set_item(pamh, PAM_RUSER, myname);
 	if (ret != PAM_SUCCESS)
 		warn("pam_set_item(?, PAM_RUSER, \"%s\"): %s",
-		    pam_strerror(pamh, ret), myname);
+			pam_strerror(pamh, ret), myname);
 
 	if (isatty(0) && (ttydev = ttyname(0)) != NULL) {
 		if (strncmp(ttydev, "/dev/", 5) == 0)
@@ -263,7 +263,7 @@ pamauth(const char *user, const char *myname, int interactive, int nopass, int p
 		ret = pam_set_item(pamh, PAM_TTY, ttydev);
 		if (ret != PAM_SUCCESS)
 			warn("pam_set_item(?, PAM_TTY, \"%s\"): %s",
-			    ttydev, pam_strerror(pamh, ret));
+				ttydev, pam_strerror(pamh, ret));
 	}
 
 
@@ -276,21 +276,30 @@ pamauth(const char *user, const char *myname, int interactive, int nopass, int p
 
 	if (!nopass) {
 		if (!interactive)
-			errx(1, "Authentication required");
+			errx(1, "Se requiere autenticación");
 
 		/* doas style prompt for pam */
 		char host[HOST_NAME_MAX + 1];
 		if (gethostname(host, sizeof(host)))
 			snprintf(host, sizeof(host), "?");
 		snprintf(doas_prompt, sizeof(doas_prompt),
-		    "\rdoas (%.32s@%.32s) password: ", myname, host);
+			"\rdoas (%.32s@%.32s) contraseña: ", myname, host);
 
 		/* authenticate */
-		ret = pam_authenticate(pamh, 0);
-		if (ret != PAM_SUCCESS) {
-			pamcleanup(ret, sess, cred);
-			syslog(LOG_AUTHPRIV | LOG_NOTICE, "failed auth for %s", myname);
-			errx(1, "Authentication failed");
+		for (int i = 0; i < AUTH_RETRIES; i++) {
+			ret = pam_authenticate(pamh, 0);
+			if (ret != PAM_SUCCESS) {
+				syslog(LOG_AUTHPRIV | LOG_NOTICE, "autenticación fallida para %s", myname);
+
+				if (i == AUTH_RETRIES - 1) {
+					pamcleanup(ret, sess, cred);
+					errx(1, "Fallo de autenticación");
+				}
+				else
+					warnx("Fallo de autenticación");
+			}
+			else
+				break;
 		}
 	}
 
@@ -302,15 +311,15 @@ pamauth(const char *user, const char *myname, int interactive, int nopass, int p
 	/* account not vaild or changing the auth token failed */
 	if (ret != PAM_SUCCESS) {
 		pamcleanup(ret, sess, cred);
-		syslog(LOG_AUTHPRIV | LOG_NOTICE, "failed auth for %s", myname);
-		errx(1, "Authentication failed");
+		syslog(LOG_AUTHPRIV | LOG_NOTICE, "autenticación fallida para %s", myname);
+		errx(1, "Fallo de autenticación");
 	}
 
 	/* set PAM_USER to the user we want to be */
 	ret = pam_set_item(pamh, PAM_USER, user);
 	if (ret != PAM_SUCCESS)
 		warn("pam_set_item(?, PAM_USER, \"%s\"): %s", user,
-		    pam_strerror(pamh, ret));
+			pam_strerror(pamh, ret));
 
 	ret = pam_setcred(pamh, PAM_REINITIALIZE_CRED);
 	if (ret != PAM_SUCCESS)

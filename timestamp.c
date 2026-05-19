@@ -1,72 +1,72 @@
 /*
- * Copyright (c) 2020 Duncan Overbruck <mail@duncano.de>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+* Copyright (c) 2020 Duncan Overbruck <mail@duncano.de>
+*
+* Permission to use, copy, modify, and distribute this software for any
+* purpose with or without fee is hereby granted, provided that the above
+* copyright notice and this permission notice appear in all copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+* WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+* ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+* ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+* OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
 
 #include "config.h"
 
 /*
- * 1) Timestamp files and directories
- *
- * Timestamp files MUST NOT be accessible to users other than root,
- * this includes the name, metadata and the content of timestamp files
- * and directories.
- *
- * Symlinks can be used to create, manipulate or delete wrong files
- * and directories. The Implementation MUST reject any symlinks for
- * timestamp files or directories.
- *
- * To avoid race conditions the implementation MUST use the same
- * file descriptor for permission checks and do read or write
- * write operations after the permission checks.
- *
- * The timestamp files MUST be opened with openat(2) using the
- * timestamp directory file descriptor. Permissions of the directory
- * MUST be checked before opening the timestamp file descriptor.
- *
- * 2) Clock sources for timestamps
- *
- * Timestamp files MUST NOT rely on only one clock source, using the
- * wall clock would allow to reset the clock to an earlier point in
- * time to reuse a timestamp.
- *
- * The timestamp MUST consist of multiple clocks and MUST reject the
- * timestamp if there is a change to any clock because there is no way
- * to differentiate between malicious and legitimate clock changes.
- *
- * 3) Timestamp lifetime
- *
- * The implementation MUST NOT use the user controlled stdin, stdout
- * and stderr file descriptors to determine the controlling terminal.
- * On linux the /proc/$pid/stat file MUST be used to get the terminal
- * number.
- *
- * There is no reliable way to determine the lifetime of a tty/pty.
- * The start time of the session leader MUST be used as part of the
- * timestamp to determine if the tty is still the same.
- * If the start time of the session leader changed the timestamp MUST
- * be rejected.
- *
- */
+* 1) Timestamp files and directories
+*
+* Timestamp files MUST NOT be accessible to users other than root,
+* this includes the name, metadata and the content of timestamp files
+* and directories.
+*
+* Symlinks can be used to create, manipulate or delete wrong files
+* and directories. The Implementation MUST reject any symlinks for
+* timestamp files or directories.
+*
+* To avoid race conditions the implementation MUST use the same
+* file descriptor for permission checks and do read or write
+* write operations after the permission checks.
+*
+* The timestamp files MUST be opened with openat(2) using the
+* timestamp directory file descriptor. Permissions of the directory
+* MUST be checked before opening the timestamp file descriptor.
+*
+* 2) Clock sources for timestamps
+*
+* Timestamp files MUST NOT rely on only one clock source, using the
+* wall clock would allow to reset the clock to an earlier point in
+* time to reuse a timestamp.
+*
+* The timestamp MUST consist of multiple clocks and MUST reject the
+* timestamp if there is a change to any clock because there is no way
+* to differentiate between malicious and legitimate clock changes.
+*
+* 3) Timestamp lifetime
+*
+* The implementation MUST NOT use the user controlled stdin, stdout
+* and stderr file descriptors to determine the controlling terminal.
+* On linux the /proc/$pid/stat file MUST be used to get the terminal
+* number.
+*
+* There is no reliable way to determine the lifetime of a tty/pty.
+* The start time of the session leader MUST be used as part of the
+* timestamp to determine if the tty is still the same.
+* If the start time of the session leader changed the timestamp MUST
+* be rejected.
+*
+*/
 
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
 
 #if !defined(timespecisset) || \
-    !defined(timespeccmp) || \
-    !defined(timespecadd)
+	!defined(timespeccmp) || \
+	!defined(timespecadd)
 #	include "sys-time.h"
 #endif
 
@@ -97,11 +97,11 @@
 
 #ifdef __linux__
 /* Use tty_nr from /proc/self/stat instead of using
- * ttyname(3), stdin, stdout and stderr are user
- * controllable and would allow to reuse timestamps
- * from another writable terminal.
- * See https://www.sudo.ws/alerts/tty_tickets.html
- */
+* ttyname(3), stdin, stdout and stderr are user
+* controllable and would allow to reuse timestamps
+* from another writable terminal.
+* See https://www.sudo.ws/alerts/tty_tickets.html
+*/
 static int
 proc_info(pid_t pid, int *ttynr, unsigned long long *starttime)
 {
@@ -118,7 +118,7 @@ proc_info(pid_t pid, int *ttynr, unsigned long long *starttime)
 		return -1;
 
 	if ((fd = open(path, O_RDONLY|O_NOFOLLOW)) == -1) {
-		warn("failed to open: %s", path);
+		warn("fallo al abrir: %s", path);
 		return -1;
 	}
 
@@ -126,7 +126,7 @@ proc_info(pid_t pid, int *ttynr, unsigned long long *starttime)
 		if (n == -1) {
 			if (errno == EAGAIN || errno == EINTR)
 				continue;
-			warn("read: %s", path);
+			warn("leer: %s", path);
 			close(fd);
 			return -1;
 		}
@@ -138,23 +138,23 @@ proc_info(pid_t pid, int *ttynr, unsigned long long *starttime)
 
 	/* error if it contains NULL bytes */
 	if (n != 0 || memchr(buf, '\0', p - buf - 1) != NULL) {
-		warn("NUL in: %s", path);
+		warn("NUL en: %s", path);
 		return -1;
 	}
 
 	*p = '\0';
 
 	/* Get the 7th field, 5 fields after the last ')',
-	 * (2th field) because the 5th field 'comm' can include
-	 * spaces and closing paranthesis too.
-	 * See https://www.sudo.ws/alerts/linux_tty.html
-	 */
+	* (2th field) because the 5th field 'comm' can include
+	* spaces and closing parenthesis too.
+	* See https://www.sudo.ws/alerts/linux_tty.html
+	*/
 	if ((p = strrchr(buf, ')')) == NULL)
 		return -1;
 
 	n = 2;
 	for ((p = strtok_r(p, " ", &saveptr)); p;
-	    (p = strtok_r(NULL, " ", &saveptr))) {
+		(p = strtok_r(NULL, " ", &saveptr))) {
 		switch (n++) {
 		case 7:
 			*ttynr = strtonum(p, INT_MIN, INT_MAX, &errstr);
@@ -165,7 +165,7 @@ proc_info(pid_t pid, int *ttynr, unsigned long long *starttime)
 			errno = 0;
 			*starttime = strtoull(p, &ep, 10);
 			if (p == ep ||
-			   (errno == ERANGE && *starttime == ULLONG_MAX))
+			(errno == ERANGE && *starttime == ULLONG_MAX))
 				return -1;
 			return 0;
 		}
@@ -190,7 +190,7 @@ timestamp_path(char *buf, size_t len)
 	if (proc_info(ppid, &ttynr, &starttime) == -1)
 		return -1;
 	n = snprintf(buf, len, TIMESTAMP_DIR "/%d-%d-%d-%llu-%d",
-	    ppid, sid, ttynr, starttime, getuid());
+		ppid, sid, ttynr, starttime, getuid());
 	if (n < 0 || n >= (int)len)
 		return -1;
 	return 0;
@@ -202,7 +202,7 @@ timestamp_set(int fd, int secs)
 	struct timespec ts[2], timeout = { .tv_sec = secs, .tv_nsec = 0 };
 
 	if (clock_gettime(CLOCK_BOOTTIME, &ts[0]) == -1 ||
-	    clock_gettime(CLOCK_REALTIME, &ts[1]) == -1)
+		clock_gettime(CLOCK_REALTIME, &ts[1]) == -1)
 		return -1;
 
 	timespecadd(&ts[0], &timeout, &ts[0]);
@@ -211,8 +211,8 @@ timestamp_set(int fd, int secs)
 }
 
 /*
- * Returns 1 if the timestamp is valid, 0 if its invalid
- */
+* Returns 1 if the timestamp is valid, 0 if its invalid
+*/
 static int
 timestamp_check(int fd, int secs)
 {
@@ -222,29 +222,29 @@ timestamp_check(int fd, int secs)
 	if (fstat(fd, &st) == -1)
 		err(1, "fstat");
 	if (st.st_uid != 0 || st.st_gid != getgid() || st.st_mode != (S_IFREG | 0000))
-		errx(1, "timestamp uid, gid or mode wrong");
+		errx(1, "uid, gid o modo de timestamp incorrectos");
 
 	/* this timestamp was created but never set, invalid but no error */
 	if (!timespecisset(&st.st_atim) || !timespecisset(&st.st_mtim))
 		return 0;
 
 	if (clock_gettime(CLOCK_BOOTTIME, &ts[0]) == -1 ||
-	    clock_gettime(CLOCK_REALTIME, &ts[1]) == -1) {
+		clock_gettime(CLOCK_REALTIME, &ts[1]) == -1) {
 		warn("clock_gettime");
 		return 0;
 	}
 
 	/* check if timestamp is too old */
 	if (timespeccmp(&st.st_atim, &ts[0], <) ||
-	    timespeccmp(&st.st_mtim, &ts[1], <))
+		timespeccmp(&st.st_mtim, &ts[1], <))
 		return 0;
 
 	/* check if timestamp is too far in the future */
 	timespecadd(&ts[0], &timeout, &ts[0]);
 	timespecadd(&ts[1], &timeout, &ts[1]);
 	if (timespeccmp(&st.st_atim, &ts[0], >) ||
-	    timespeccmp(&st.st_mtim, &ts[1], >)) {
-		warnx("timestamp too far in the future");
+		timespeccmp(&st.st_mtim, &ts[1], >)) {
+		warnx("timestamp demasiado lejano en el futuro");
 		return 0;
 	}
 
@@ -280,7 +280,7 @@ timestamp_open(int *valid, int secs)
 		int n;
 
 		if (errno != ENOENT)
-			err(1, "open: %s", path);
+			err(1, "abrir: %s", path);
 
 		n = snprintf(tmp, sizeof tmp, TIMESTAMP_DIR "/.tmp-%d", getpid());
 		if (n < 0 || n >= (int)sizeof tmp)

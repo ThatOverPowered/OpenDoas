@@ -1,28 +1,28 @@
 /*	$OpenBSD: tree.h,v 1.13 2011/07/09 00:19:45 pirofti Exp $	*/
 /*
- * Copyright 2002 Niels Provos <provos@citi.umich.edu>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+* Copyright 2002 Niels Provos <provos@citi.umich.edu>
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+* IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+* IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+* NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+* THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /* OPENBSD ORIGINAL: sys/sys/tree.h */
 
@@ -34,31 +34,31 @@
 #define	_SYS_TREE_H_
 
 /*
- * This file defines data structures for different types of trees:
- * splay trees and red-black trees.
- *
- * A splay tree is a self-organizing data structure.  Every operation
- * on the tree causes a splay to happen.  The splay moves the requested
- * node to the root of the tree and partly rebalances it.
- *
- * This has the benefit that request locality causes faster lookups as
- * the requested nodes move to the top of the tree.  On the other hand,
- * every lookup causes memory writes.
- *
- * The Balance Theorem bounds the total access time for m operations
- * and n inserts on an initially empty tree as O((m + n)lg n).  The
- * amortized cost for a sequence of m accesses to a splay tree is O(lg n);
- *
- * A red-black tree is a binary search tree with the node color as an
- * extra attribute.  It fulfills a set of conditions:
- *	- every search path from the root to a leaf consists of the
- *	  same number of black nodes,
- *	- each red node (except for the root) has a black parent,
- *	- each leaf node is black.
- *
- * Every operation on a red-black tree is bounded as O(lg n).
- * The maximum height of a red-black tree is 2lg (n+1).
- */
+* This file defines data structures for different types of trees:
+* splay trees and red-black trees.
+*
+* A splay tree is a self-organizing data structure.  Every operation
+* on the tree causes a splay to happen.  The splay moves the requested
+* node to the root of the tree and partly rebalances it.
+*
+* This has the benefit that request locality causes faster lookups as
+* the requested nodes move to the top of the tree.  On the other hand,
+* every lookup causes memory writes.
+*
+* The Balance Theorem bounds the total access time for m operations
+* and n inserts on an initially empty tree as O((m + n)lg n).  The
+* amortized cost for a sequence of m accesses to a splay tree is O(lg n);
+*
+* A red-black tree is a binary search tree with the node color as an
+* extra attribute.  It fulfills a set of conditions:
+*	- every search path from the root to a leaf consists of the
+*	  same number of black nodes,
+*	- each red node (except for the root) has a black parent,
+*	- each leaf node is black.
+*
+* Every operation on a red-black tree is bounded as O(lg n).
+* The maximum height of a red-black tree is 2lg (n+1).
+*/
 
 #define SPLAY_HEAD(name, type)						\
 struct name {								\
@@ -153,35 +153,35 @@ static __inline struct type *						\
 name##_SPLAY_MIN_MAX(struct name *head, int val)			\
 {									\
 	name##_SPLAY_MINMAX(head, val);					\
-        return (SPLAY_ROOT(head));					\
+		return (SPLAY_ROOT(head));					\
 }
 
 /* Main splay operation.
- * Moves node close to the key of elm to top
- */
+* Moves node close to the key of elm to top
+*/
 #define SPLAY_GENERATE(name, type, field, cmp)				\
 struct type *								\
 name##_SPLAY_INSERT(struct name *head, struct type *elm)		\
 {									\
-    if (SPLAY_EMPTY(head)) {						\
-	    SPLAY_LEFT(elm, field) = SPLAY_RIGHT(elm, field) = NULL;	\
-    } else {								\
-	    int __comp;							\
-	    name##_SPLAY(head, elm);					\
-	    __comp = (cmp)(elm, (head)->sph_root);			\
-	    if(__comp < 0) {						\
-		    SPLAY_LEFT(elm, field) = SPLAY_LEFT((head)->sph_root, field);\
-		    SPLAY_RIGHT(elm, field) = (head)->sph_root;		\
-		    SPLAY_LEFT((head)->sph_root, field) = NULL;		\
-	    } else if (__comp > 0) {					\
-		    SPLAY_RIGHT(elm, field) = SPLAY_RIGHT((head)->sph_root, field);\
-		    SPLAY_LEFT(elm, field) = (head)->sph_root;		\
-		    SPLAY_RIGHT((head)->sph_root, field) = NULL;	\
-	    } else							\
-		    return ((head)->sph_root);				\
-    }									\
-    (head)->sph_root = (elm);						\
-    return (NULL);							\
+	if (SPLAY_EMPTY(head)) {						\
+		SPLAY_LEFT(elm, field) = SPLAY_RIGHT(elm, field) = NULL;	\
+	} else {								\
+		int __comp;							\
+		name##_SPLAY(head, elm);					\
+		__comp = (cmp)(elm, (head)->sph_root);			\
+		if(__comp < 0) {						\
+			SPLAY_LEFT(elm, field) = SPLAY_LEFT((head)->sph_root, field);\
+			SPLAY_RIGHT(elm, field) = (head)->sph_root;		\
+			SPLAY_LEFT((head)->sph_root, field) = NULL;		\
+		} else if (__comp > 0) {					\
+			SPLAY_RIGHT(elm, field) = SPLAY_RIGHT((head)->sph_root, field);\
+			SPLAY_LEFT(elm, field) = (head)->sph_root;		\
+			SPLAY_RIGHT((head)->sph_root, field) = NULL;	\
+		} else							\
+			return ((head)->sph_root);				\
+	}									\
+	(head)->sph_root = (elm);						\
+	return (NULL);							\
 }									\
 									\
 struct type *								\
@@ -241,8 +241,8 @@ name##_SPLAY(struct name *head, struct type *elm)			\
 }									\
 									\
 /* Splay with either the minimum or the maximum element			\
- * Used to find minimum or maximum element in tree.			\
- */									\
+* Used to find minimum or maximum element in tree.			\
+*/									\
 void name##_SPLAY_MINMAX(struct name *head, int __comp) \
 {									\
 	struct type __node, *__left, *__right, *__tmp;			\
@@ -290,8 +290,8 @@ void name##_SPLAY_MINMAX(struct name *head, int __comp) \
 
 #define SPLAY_FOREACH(x, name, head)					\
 	for ((x) = SPLAY_MIN(name, head);				\
-	     (x) != NULL;						\
-	     (x) = SPLAY_NEXT(name, head, x))
+		(x) != NULL;						\
+		(x) = SPLAY_NEXT(name, head, x))
 
 /* Macros that define a red-black tree */
 #define RB_HEAD(name, type)						\
@@ -396,8 +396,8 @@ attr struct type *name##_RB_MINMAX(struct name *, int);			\
 									\
 
 /* Main rb operation.
- * Moves node close to the key of elm to top
- */
+* Moves node close to the key of elm to top
+*/
 #define	RB_GENERATE(name, type, field, cmp)				\
 	RB_GENERATE_INTERNAL(name, type, field, cmp,)
 #define	RB_GENERATE_STATIC(name, type, field, cmp)			\
@@ -408,7 +408,7 @@ name##_RB_INSERT_COLOR(struct name *head, struct type *elm)		\
 {									\
 	struct type *parent, *gparent, *tmp;				\
 	while ((parent = RB_PARENT(elm, field)) &&			\
-	    RB_COLOR(parent, field) == RB_RED) {			\
+		RB_COLOR(parent, field) == RB_RED) {			\
 		gparent = RB_PARENT(parent, field);			\
 		if (parent == RB_LEFT(gparent, field)) {		\
 			tmp = RB_RIGHT(gparent, field);			\
@@ -452,7 +452,7 @@ name##_RB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm)
 {									\
 	struct type *tmp;						\
 	while ((elm == NULL || RB_COLOR(elm, field) == RB_BLACK) &&	\
-	    elm != RB_ROOT(head)) {					\
+		elm != RB_ROOT(head)) {					\
 		if (RB_LEFT(parent, field) == elm) {			\
 			tmp = RB_RIGHT(parent, field);			\
 			if (RB_COLOR(tmp, field) == RB_RED) {		\
@@ -461,15 +461,15 @@ name##_RB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm)
 				tmp = RB_RIGHT(parent, field);		\
 			}						\
 			if ((RB_LEFT(tmp, field) == NULL ||		\
-			    RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) &&\
-			    (RB_RIGHT(tmp, field) == NULL ||		\
-			    RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK)) {\
+				RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) &&\
+				(RB_RIGHT(tmp, field) == NULL ||		\
+				RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK)) {\
 				RB_COLOR(tmp, field) = RB_RED;		\
 				elm = parent;				\
 				parent = RB_PARENT(elm, field);		\
 			} else {					\
 				if (RB_RIGHT(tmp, field) == NULL ||	\
-				    RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK) {\
+					RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK) {\
 					struct type *oleft;		\
 					if ((oleft = RB_LEFT(tmp, field)))\
 						RB_COLOR(oleft, field) = RB_BLACK;\
@@ -493,15 +493,15 @@ name##_RB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm)
 				tmp = RB_LEFT(parent, field);		\
 			}						\
 			if ((RB_LEFT(tmp, field) == NULL ||		\
-			    RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) &&\
-			    (RB_RIGHT(tmp, field) == NULL ||		\
-			    RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK)) {\
+				RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) &&\
+				(RB_RIGHT(tmp, field) == NULL ||		\
+				RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK)) {\
 				RB_COLOR(tmp, field) = RB_RED;		\
 				elm = parent;				\
 				parent = RB_PARENT(elm, field);		\
 			} else {					\
 				if (RB_LEFT(tmp, field) == NULL ||	\
-				    RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) {\
+					RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) {\
 					struct type *oright;		\
 					if ((oright = RB_RIGHT(tmp, field)))\
 						RB_COLOR(oright, field) = RB_BLACK;\
@@ -670,11 +670,11 @@ name##_RB_NEXT(struct type *elm)					\
 			elm = RB_LEFT(elm, field);			\
 	} else {							\
 		if (RB_PARENT(elm, field) &&				\
-		    (elm == RB_LEFT(RB_PARENT(elm, field), field)))	\
+			(elm == RB_LEFT(RB_PARENT(elm, field), field)))	\
 			elm = RB_PARENT(elm, field);			\
 		else {							\
 			while (RB_PARENT(elm, field) &&			\
-			    (elm == RB_RIGHT(RB_PARENT(elm, field), field)))\
+				(elm == RB_RIGHT(RB_PARENT(elm, field), field)))\
 				elm = RB_PARENT(elm, field);		\
 			elm = RB_PARENT(elm, field);			\
 		}							\
@@ -692,11 +692,11 @@ name##_RB_PREV(struct type *elm)					\
 			elm = RB_RIGHT(elm, field);			\
 	} else {							\
 		if (RB_PARENT(elm, field) &&				\
-		    (elm == RB_RIGHT(RB_PARENT(elm, field), field)))	\
+			(elm == RB_RIGHT(RB_PARENT(elm, field), field)))	\
 			elm = RB_PARENT(elm, field);			\
 		else {							\
 			while (RB_PARENT(elm, field) &&			\
-			    (elm == RB_LEFT(RB_PARENT(elm, field), field)))\
+				(elm == RB_LEFT(RB_PARENT(elm, field), field)))\
 				elm = RB_PARENT(elm, field);		\
 			elm = RB_PARENT(elm, field);			\
 		}							\
@@ -733,22 +733,22 @@ name##_RB_MINMAX(struct name *head, int val)				\
 
 #define RB_FOREACH(x, name, head)					\
 	for ((x) = RB_MIN(name, head);					\
-	     (x) != NULL;						\
-	     (x) = name##_RB_NEXT(x))
+		(x) != NULL;						\
+		(x) = name##_RB_NEXT(x))
 
 #define RB_FOREACH_SAFE(x, name, head, y)				\
 	for ((x) = RB_MIN(name, head);					\
-	    ((x) != NULL) && ((y) = name##_RB_NEXT(x), 1);		\
-	     (x) = (y))
+		((x) != NULL) && ((y) = name##_RB_NEXT(x), 1);		\
+		(x) = (y))
 
 #define RB_FOREACH_REVERSE(x, name, head)				\
 	for ((x) = RB_MAX(name, head);					\
-	     (x) != NULL;						\
-	     (x) = name##_RB_PREV(x))
+		(x) != NULL;						\
+		(x) = name##_RB_PREV(x))
 
 #define RB_FOREACH_REVERSE_SAFE(x, name, head, y)			\
 	for ((x) = RB_MAX(name, head);					\
-	    ((x) != NULL) && ((y) = name##_RB_PREV(x), 1);		\
-	     (x) = (y))
+		((x) != NULL) && ((y) = name##_RB_PREV(x), 1);		\
+		(x) = (y))
 
 #endif	/* _SYS_TREE_H_ */

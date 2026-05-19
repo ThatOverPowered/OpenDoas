@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2020 Duncan Overbruck <mail@duncano.de>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+* Copyright (c) 2020 Duncan Overbruck <mail@duncano.de>
+*
+* Permission to use, copy, modify, and distribute this software for any
+* purpose with or without fee is hereby granted, provided that the above
+* copyright notice and this permission notice appear in all copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+* WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+* ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+* ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+* OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
 
 #include "config.h"
 
@@ -41,13 +41,14 @@
 #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
 #endif
 
-void
+vvoid
 shadowauth(const char *myname, int persist)
 {
 	const char *hash;
 	char *encrypted;
 	struct passwd *pw;
-	char *challenge, *response, rbuf[1024], cbuf[128];
+	char *response, rbuf[1024];
+	const char *challenge = "Contraseña:";
 
 #ifdef USE_TIMESTAMP
 	int fd = -1;
@@ -68,35 +69,34 @@ shadowauth(const char *myname, int persist)
 	if (hash[0] == 'x' && hash[1] == '\0') {
 		struct spwd *sp;
 		if ((sp = getspnam(myname)) == NULL)
-			errx(1, "Authentication failed");
+			errx(1, "Autenticación fallida");
 		hash = sp->sp_pwdp;
 	} else if (hash[0] != '*') {
-		errx(1, "Authentication failed");
+		errx(1, "Autenticación fallida");
 	}
 
-	char host[HOST_NAME_MAX + 1];
-	if (gethostname(host, sizeof(host)))
-		snprintf(host, sizeof(host), "?");
-	snprintf(cbuf, sizeof(cbuf),
-			"\rdoas (%.32s@%.32s) password: ", myname, host);
-	challenge = cbuf;
-
-	response = readpassphrase(challenge, rbuf, sizeof(rbuf), RPP_REQUIRE_TTY);
-	if (response == NULL && errno == ENOTTY) {
-		syslog(LOG_AUTHPRIV | LOG_NOTICE,
-			"tty required for %s", myname);
-		errx(1, "a tty is required");
-	}
-	if (response == NULL)
-		err(1, "readpassphrase");
-	if ((encrypted = crypt(response, hash)) == NULL) {
-		explicit_bzero(rbuf, sizeof(rbuf));
-		errx(1, "Authentication failed");
-	}
-	explicit_bzero(rbuf, sizeof(rbuf));
-	if (strcmp(encrypted, hash) != 0) {
-		syslog(LOG_AUTHPRIV | LOG_NOTICE, "failed auth for %s", myname);
-		errx(1, "Authentication failed");
+	for (int i = 0; i < AUTH_RETRIES; i++) {
+		response = readpassphrase(challenge, rbuf, sizeof(rbuf), RPP_REQUIRE_TTY);
+		if (response == NULL && errno == ENOTTY) {
+			syslog(LOG_AUTHPRIV | LOG_NOTICE,
+				"se necesita tty para %s", myname);
+			errx(1, "se requiere un tty");
+		}
+		if (response == NULL)
+			err(1, "readpassphrase");
+		if ((encrypted = crypt(response, hash)) == NULL) {
+			explicit_bzero(rbuf, sizeof(rbuf));
+			(i == AUTH_RETRIES - 1) ? errx(1, "Autenticación fallida") : warnx("Autenticación fallida");
+		}
+		else {
+			explicit_bzero(rbuf, sizeof(rbuf));
+			if (strcmp(encrypted, hash) != 0) {
+				syslog(LOG_AUTHPRIV | LOG_NOTICE, "fallo de autenticación para %s", myname);
+				(i == AUTH_RETRIES - 1) ? errx(1, "Autenticación fallida") : warnx("Autenticación fallida");
+			}
+			else
+				break;
+		}
 	}
 
 #ifdef USE_TIMESTAMP

@@ -1,19 +1,19 @@
 /* $OpenBSD: parse.y,v 1.10 2015/07/24 06:36:42 zhuk Exp $ */
 /*
- * Copyright (c) 2015 Ted Unangst <tedu@openbsd.org>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+* Copyright (c) 2015 Ted Unangst <tedu@openbsd.org>
+*
+* Permission to use, copy, modify, and distribute this software for any
+* purpose with or without fee is hereby granted, provided that the above
+* copyright notice and this permission notice appear in all copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+* WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+* ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+* ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+* OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
 
 %{
 #include "config.h"
@@ -90,7 +90,7 @@ rule:		action ident target cmd {
 			struct rule *r;
 			r = calloc(1, sizeof(*r));
 			if (!r)
-				errx(1, "can't allocate rule");
+				errx(1, "no se puede asignar la regla");
 			r->action = $1.action;
 			r->options = $1.options;
 			r->envlist = $1.envlist;
@@ -102,9 +102,9 @@ rule:		action ident target cmd {
 				if (maxrules == 0)
 					maxrules = 32;
 				rules = reallocarray(rules, maxrules,
-				    2 * sizeof(*rules));
+					2 * sizeof(*rules));
 				if (!rules)
-					errx(1, "can't allocate rules");
+					errx(1, "no se pueden asignar las reglas");
 				maxrules *= 2;
 			}
 			rules[nrules++] = r;
@@ -127,12 +127,12 @@ options:	/* none */ {
 			$$.options = $1.options | $2.options;
 			$$.envlist = $1.envlist;
 			if (($$.options & (NOPASS|PERSIST)) == (NOPASS|PERSIST)) {
-				yyerror("can't combine nopass and persist");
+				yyerror("no se pueden combinar nopass y persist");
 				YYERROR;
 			}
 			if ($2.envlist) {
 				if ($$.envlist) {
-					yyerror("can't have two setenv sections");
+					yyerror("no se puede tener dos secciones setenv");
 					YYERROR;
 				} else
 					$$.envlist = $2.envlist;
@@ -157,12 +157,12 @@ option:		TNOPASS {
 
 strlist:	/* empty */ {
 			if (!($$.strlist = calloc(1, sizeof(char *))))
-				errx(1, "can't allocate strlist");
+				errx(1, "no se puede asignar lista de cadenas");
 		} | strlist TSTRING {
 			int nstr = arraylen($1.strlist);
 			if (!($$.strlist = reallocarray($1.strlist, nstr + 2,
-			    sizeof(char *))))
-				errx(1, "can't allocate strlist");
+				sizeof(char *))))
+				errx(1, "no se puede asignar lista de cadenas");
 			$$.strlist[nstr] = $2.str;
 			$$.strlist[nstr + 1] = NULL;
 		} ;
@@ -203,7 +203,7 @@ yyerror(const char *fmt, ...)
 	va_start(va, fmt);
 	vfprintf(stderr, fmt, va);
 	va_end(va);
-	fprintf(stderr, " at line %d\n", yylval.lineno + 1);
+	fprintf(stderr, " en la línea %d\n", yylval.lineno + 1);
 	parse_errors++;
 }
 
@@ -263,8 +263,8 @@ repeat:
 	for (;; c = getc(yyfp), yylval.colno++) {
 		switch (c) {
 		case '\0':
-			yyerror("unallowed character NUL in column %d",
-			    yylval.colno + 1);
+			yyerror("carácter NUL no permitido en la columna %d",
+				yylval.colno + 1);
 			escape = 0;
 			continue;
 		case '\\':
@@ -274,8 +274,8 @@ repeat:
 			break;
 		case '\n':
 			if (quotes)
-				yyerror("unterminated quotes in column %d",
-				    qpos + 1);
+				yyerror("comillas sin terminar en la columna %d",
+					qpos + 1);
 			if (escape) {
 				nonkw = 1;
 				escape = 0;
@@ -286,11 +286,11 @@ repeat:
 			goto eow;
 		case EOF:
 			if (escape)
-				yyerror("unterminated escape in column %d",
-				    yylval.colno);
+				yyerror("escape sin terminar en la columna %d",
+					yylval.colno);
 			if (quotes)
-				yyerror("unterminated quotes in column %d",
-				    qpos + 1);
+				yyerror("comillas sin terminar en la columna %d",
+					qpos + 1);
 			goto eow;
 			/* FALLTHROUGH */
 		case '{':
@@ -313,7 +313,7 @@ repeat:
 		}
 		*p++ = c;
 		if (p == ebuf) {
-			yyerror("too long line");
+			yyerror("línea demasiado larga");
 			p = buf;
 		}
 		escape = 0;
@@ -325,10 +325,10 @@ eow:
 		ungetc(c, yyfp);
 	if (p == buf) {
 		/*
-		 * There could be a number of reasons for empty buffer,
-		 * and we handle all of them here, to avoid cluttering
-		 * the main loop.
-		 */
+		* There could be a number of reasons for empty buffer,
+		* and we handle all of them here, to avoid cluttering
+		* the main loop.
+		*/
 		if (c == EOF)
 			goto eof;
 		else if (qpos == -1)    /* accept, e.g., empty args: cmd foo args "" */
@@ -347,6 +347,6 @@ eow:
 
 eof:
 	if (ferror(yyfp))
-		yyerror("input error reading config");
+		yyerror("error de entrada al leer la configuración");
 	return 0;
 }

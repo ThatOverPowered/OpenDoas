@@ -1,19 +1,19 @@
 /* $OpenBSD: doas.c,v 1.52 2016/04/28 04:48:56 tedu Exp $ */
 /*
- * Copyright (c) 2015 Ted Unangst <tedu@openbsd.org>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+* Copyright (c) 2015 Ted Unangst <tedu@openbsd.org>
+*
+* Permission to use, copy, modify, and distribute this software for any
+* purpose with or without fee is hereby granted, provided that the above
+* copyright notice and this permission notice appear in all copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+* WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+* ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+* ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+* OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
 
 #include "config.h"
 
@@ -42,9 +42,8 @@
 static void __dead
 usage(void)
 {
-	fprintf(stderr, "usage: doas [-Lns] [-C config] [-u user]"
-	    " command [args]\n");
-	exit(1);
+fprintf(stderr, "Uso: doas [-Lns] [-C configuración] [-u usuario] comando [args]\n");
+exit(1);
 }
 
 static int
@@ -96,9 +95,8 @@ parsegid(const char *s, gid_t *gid)
 }
 
 static int
-match(uid_t uid, gid_t *groups, int ngroups, uid_t target, const char *cmd,
-    const char **cmdargs, struct rule *r)
-{
+match(uid_t uid, gid_t *groups, int ngroups, uid_t target, const char *cmd, const char **cmdargs, struct rule *r) {
+
 	int i;
 
 	if (r->ident[0] == ':') {
@@ -136,20 +134,21 @@ match(uid_t uid, gid_t *groups, int ngroups, uid_t target, const char *cmd,
 }
 
 static int
-permit(uid_t uid, gid_t *groups, int ngroups, const struct rule **lastr,
-    uid_t target, const char *cmd, const char **cmdargs)
-{
+permit(uid_t uid, gid_t *groups, int ngroups, const struct rule **lastr, uid_t target, const char *cmd, const char **cmdargs) {
+
 	size_t i;
 
 	*lastr = NULL;
 	for (i = 0; i < nrules; i++) {
 		if (match(uid, groups, ngroups, target, cmd,
-		    cmdargs, rules[i]))
+			cmdargs, rules[i]))
 			*lastr = rules[i];
 	}
 	if (!*lastr)
+		return -1;
+	if ((*lastr)->action == PERMIT)
 		return 0;
-	return (*lastr)->action == PERMIT;
+	return -1;
 }
 
 static void
@@ -161,16 +160,16 @@ parseconfig(const char *filename, int checkperms)
 
 	yyfp = fopen(filename, "r");
 	if (!yyfp)
-		err(1, checkperms ? "doas is not enabled, %s" :
-		    "could not open config file %s", filename);
+		err(1, checkperms ? "doas no está habilitado, %s" :
+			"no se pudo abrir el archivo de configuración %s", filename);
 
 	if (checkperms) {
 		if (fstat(fileno(yyfp), &sb) != 0)
 			err(1, "fstat(\"%s\")", filename);
 		if ((sb.st_mode & (S_IWGRP|S_IWOTH)) != 0)
-			errx(1, "%s is writable by group or other", filename);
+			errx(1, "%s tiene permisos de escritura para grupo o para otros", filename);
 		if (sb.st_uid != 0)
-			errx(1, "%s is not owned by root", filename);
+			errx(1, "%s no pertenece a root", filename);
 	}
 
 	yyparse();
@@ -180,10 +179,10 @@ parseconfig(const char *filename, int checkperms)
 }
 
 static void __dead
-checkconfig(const char *confpath, int argc, char **argv,
-    uid_t uid, gid_t *groups, int ngroups, uid_t target)
+checkconfig(const char *confpath, int argc, char **argv, uid_t uid, gid_t *groups, int ngroups, uid_t target)
 {
 	const struct rule *rule;
+	int rv;
 
 	if (setresuid(uid, uid, uid) != 0)
 		err(1, "setresuid");
@@ -192,14 +191,15 @@ checkconfig(const char *confpath, int argc, char **argv,
 	if (!argc)
 		exit(0);
 
-	if (permit(uid, groups, ngroups, &rule, target, argv[0],
-	    (const char **)argv + 1)) {
-		printf("permit%s\n", (rule->options & NOPASS) ? " nopass" : "");
+	rv = permit(uid, groups, ngroups, &rule, target, argv[0],
+		(const char **)argv + 1);
+	if (rv == 0) {
+		printf("permitir%s\n", (rule->options & NOPASS) ? " sin contraseña" : "");
 		exit(0);
 	} else {
-		printf("deny\n");
+		printf("denegar\n");
 		exit(1);
-	}
+}
 }
 
 int
@@ -238,8 +238,7 @@ mygetpwuid_r(uid_t uid, struct passwd *pwd, struct passwd **result)
 int
 main(int argc, char **argv)
 {
-	const char *safepath = "/bin:/sbin:/usr/bin:/usr/sbin:"
-	    "/usr/local/bin:/usr/local/sbin";
+	const char *safepath = "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin";
 	const char *confpath = NULL;
 	char *shargv[] = { NULL, NULL };
 	char *sh;
@@ -279,7 +278,7 @@ main(int argc, char **argv)
 #endif
 		case 'u':
 			if (parseuid(optarg, &target) != 0)
-				errx(1, "unknown user");
+				errx(1, "usuario desconocido");
 			break;
 		case 'n':
 			nflag = 1;
@@ -303,12 +302,12 @@ main(int argc, char **argv)
 
 	rv = mygetpwuid_r(uid, &mypwstore, &mypw);
 	if (rv != 0)
-		err(1, "getpwuid_r failed");
+		err(1, "fallo getpwuid_r");
 	if (mypw == NULL)
-		errx(1, "no passwd entry for self");
+		errx(1, "no hay entrada passwd para el usuario actual");
 	ngroups = getgroups(NGROUPS_MAX, groups);
 	if (ngroups == -1)
-		err(1, "can't get groups");
+		err(1, "no se pueden obtener los grupos");
 	groups[ngroups++] = getgid();
 
 	if (sflag) {
@@ -322,13 +321,12 @@ main(int argc, char **argv)
 	}
 
 	if (confpath) {
-		checkconfig(confpath, argc, argv, uid, groups, ngroups,
-		    target);
-		exit(1);	/* fail safe */
+		checkconfig(confpath, argc, argv, uid, groups, ngroups, target);
+		exit(1); /* fail safe */
 	}
 
 	if (geteuid())
-		errx(1, "not installed setuid");
+		errx(1, "no instalado con setuid");
 
 	parseconfig(DOAS_CONF, 1);
 
@@ -342,17 +340,18 @@ main(int argc, char **argv)
 	}
 
 	cmd = argv[0];
-	if (!permit(uid, groups, ngroups, &rule, target, cmd,
-	    (const char **)argv + 1)) {
+	rv = permit(uid, groups, ngroups, &rule, target, cmd,
+		(const char **)argv + 1);
+	if (rv != 0) {
 		syslog(LOG_AUTHPRIV | LOG_NOTICE,
-		    "command not permitted for %s: %s", mypw->pw_name, cmdline);
+			"comando no permitido para %s: %s", mypw->pw_name, cmdline);
 		errc(1, EPERM, NULL);
 	}
 
-#if defined(USE_SHADOW)
+	#if defined(USE_SHADOW)
 	if (!(rule->options & NOPASS)) {
 		if (nflag)
-			errx(1, "Authentication required");
+			errx(1, "Autenticación requerida");
 
 		shadowauth(mypw->pw_name, rule->options & PERSIST);
 	}
@@ -360,7 +359,7 @@ main(int argc, char **argv)
 	/* no authentication provider, only allow NOPASS rules */
 	(void) nflag;
 	if (!(rule->options & NOPASS))
-		errx(1, "Authentication required");
+		errx(1, "Autenticación requerida");
 #endif
 
 	if ((p = getenv("PATH")) != NULL)
@@ -370,26 +369,25 @@ main(int argc, char **argv)
 
 	if (rule->cmd) {
 		if (setenv("PATH", safepath, 1) == -1)
-			err(1, "failed to set PATH '%s'", safepath);
+			err(1, "fallo al establecer PATH '%s'", safepath);
 	}
 
 	rv = mygetpwuid_r(target, &targpwstore, &targpw);
 	if (rv != 0)
-		err(1, "getpwuid_r failed");
+		err(1, "fallo getpwuid_r");
 	if (targpw == NULL)
-		errx(1, "no passwd entry for target");
+		errx(1, "no hay entrada passwd para el usuario destino");
 
 #if defined(USE_PAM)
-	pamauth(targpw->pw_name, mypw->pw_name, !nflag, rule->options & NOPASS,
-	    rule->options & PERSIST);
+	pamauth(targpw->pw_name, mypw->pw_name, !nflag, rule->options & NOPASS, rule->options & PERSIST);
 #endif
 
 #ifdef HAVE_LOGIN_CAP_H
 	if (setusercontext(NULL, targpw, target, LOGIN_SETGROUP |
-	    LOGIN_SETPATH |
-	    LOGIN_SETPRIORITY | LOGIN_SETRESOURCES | LOGIN_SETUMASK |
-	    LOGIN_SETUSER) != 0)
-		errx(1, "failed to set user context for target");
+		LOGIN_SETPATH |
+		LOGIN_SETPRIORITY | LOGIN_SETRESOURCES | LOGIN_SETUMASK |
+		LOGIN_SETUSER) != 0)
+		errx(1, "fallo al establecer el contexto de usuario para el destino");
 #else
 	if (setresgid(targpw->pw_gid, targpw->pw_gid, targpw->pw_gid) != 0)
 		err(1, "setresgid");
@@ -398,32 +396,30 @@ main(int argc, char **argv)
 	if (setresuid(target, target, target) != 0)
 		err(1, "setresuid");
 	if (setenv("PATH", safepath, 1) == -1)
-		err(1, "failed to set PATH '%s'", safepath);
+		err(1, "fallo al establecer PATH '%s'", safepath);
 #endif
 
 	if (getcwd(cwdpath, sizeof(cwdpath)) == NULL)
-		cwd = "(failed)";
+		cwd = "(fallo)";
 	else
 		cwd = cwdpath;
 
 	if (!(rule->options & NOLOG)) {
-		syslog(LOG_AUTHPRIV | LOG_INFO,
-		    "%s ran command %s as %s from %s",
-		    mypw->pw_name, cmdline, targpw->pw_name, cwd);
+		syslog(LOG_AUTHPRIV | LOG_INFO, "%s ejecutó el comando %s como %s desde %s", mypw->pw_name, cmdline, targpw->pw_name, cwd);
 	}
 
-	envp = prepenv(rule, mypw, targpw);
+envp = prepenv(rule, mypw, targpw);
 
 	/* setusercontext set path for the next process, so reset it for us */
 	if (rule->cmd) {
 		if (setenv("PATH", safepath, 1) == -1)
-			err(1, "failed to set PATH '%s'", safepath);
+			err(1, "fallo al establecer PATH '%s'", safepath);
 	} else {
 		if (setenv("PATH", formerpath, 1) == -1)
-			err(1, "failed to set PATH '%s'", formerpath);
+			err(1, "fallo al establecer PATH '%s'", formerpath);
 	}
 	execvpe(cmd, argv, envp);
 	if (errno == ENOENT)
-		errx(1, "%s: command not found", cmd);
+		errx(1, "%s: comando no encontrado", cmd);
 	err(1, "%s", cmd);
 }

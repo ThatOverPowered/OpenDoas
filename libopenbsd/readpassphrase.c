@@ -1,25 +1,25 @@
 /*	$OpenBSD: readpassphrase.c,v 1.26 2016/10/18 12:47:18 millert Exp $	*/
 
 /*
- * Copyright (c) 2000-2002, 2007, 2010
- *	Todd C. Miller <Todd.Miller@courtesan.com>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Sponsored in part by the Defense Advanced Research Projects
- * Agency (DARPA) and Air Force Research Laboratory, Air Force
- * Materiel Command, USAF, under agreement number F39502-99-1-0512.
- */
+* Copyright (c) 2000-2002, 2007, 2010
+*	Todd C. Miller <Todd.Miller@courtesan.com>
+*
+* Permission to use, copy, modify, and distribute this software for any
+* purpose with or without fee is hereby granted, provided that the above
+* copyright notice and this permission notice appear in all copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+* WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+* ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+* ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+* OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*
+* Sponsored in part by the Defense Advanced Research Projects
+* Agency (DARPA) and Air Force Research Laboratory, Air Force
+* Materiel Command, USAF, under agreement number F39502-99-1-0512.
+*/
 
 /* OPENBSD ORIGINAL: lib/libc/gen/readpassphrase.c */
 
@@ -79,11 +79,11 @@ restart:
 	save_errno = 0;
 	need_restart = 0;
 	/*
-	 * Read and write to /dev/tty if available.  If not, read from
-	 * stdin and write to stderr unless a tty is required.
-	 */
+	* Read and write to /dev/tty if available.  If not, read from
+	* stdin and write to stderr unless a tty is required.
+	*/
 	if ((flags & RPP_STDIN) ||
-	    (input = output = open(_PATH_TTY, O_RDWR)) == -1) {
+		(input = output = open(_PATH_TTY, O_RDWR)) == -1) {
 		if (flags & RPP_REQUIRE_TTY) {
 			errno = ENOTTY;
 			return(NULL);
@@ -93,10 +93,10 @@ restart:
 	}
 
 	/*
-	 * Turn off echo if possible.
-	 * If we are using a tty but are not the foreground pgrp this will
-	 * generate SIGTTOU, so do it *before* installing the signal handlers.
-	 */
+	* Turn off echo if possible.
+	* If we are using a tty but are not the foreground pgrp this will
+	* generate SIGTTOU, so do it *before* installing the signal handlers.
+	*/
 	if (input != STDIN_FILENO && tcgetattr(input, &oterm) == 0) {
 		memcpy(&term, &oterm, sizeof(term));
 		if (!(flags & RPP_ECHO_ON))
@@ -114,10 +114,10 @@ restart:
 	}
 
 	/*
-	 * Catch signals that would otherwise cause the user to end
-	 * up with echo turned off in the shell.  Don't worry about
-	 * things like SIGXCPU and SIGVTALRM for now.
-	 */
+	* Catch signals that would otherwise cause the user to end
+	* up with echo turned off in the shell.  Don't worry about
+	* things like SIGXCPU and SIGVTALRM for now.
+	*/
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;		/* don't restart system calls */
 	sa.sa_handler = handler;
@@ -159,7 +159,7 @@ restart:
 
 		/* Ignore SIGTTOU generated when we are not the fg pgrp. */
 		while (tcsetattr(input, TCSAFLUSH|TCSASOFT, &oterm) == -1 &&
-		    errno == EINTR && !signo[SIGTTOU])
+			errno == EINTR && !signo[SIGTTOU])
 			continue;
 		signo[SIGTTOU] = sigttou;
 	}
@@ -176,9 +176,9 @@ restart:
 		(void)close(input);
 
 	/*
-	 * If we were interrupted by a signal, resend it to ourselves
-	 * now that we have restored the signal handlers.
-	 */
+	* If we were interrupted by a signal, resend it to ourselves
+	* now that we have restored the signal handlers.
+	*/
 	for (i = 0; i < _NSIG; i++) {
 		if (signo[i]) {
 			kill(getpid(), i);

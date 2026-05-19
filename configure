@@ -7,31 +7,31 @@ die() {
 
 usage() {
 	cat <<EOF
-usage: configure [options]
+Uso: configure [opciones]
 
-  --prefix=PREFIX        installation prefix [/usr]
-  --exec-prefix=EPREFIX  installation prefix for executable files [PREFIX]
-  --bindir=DIR           user executables [PREFIX/bin]
-  --datadir=DIR          architecture-independent data files [PREFIX/share]
-  --mandir=DIR           manual pages [DATADIR/man]
-  --sysconfdir=DIR       directory for configuration files [/etc]
+--prefix=PREFIX				prefijo de instalación [/usr]
+--exec-prefix=EPREFIX		prefijo de instalación para ejecutables [PREFIX]
+--bindir=DIR				ejecutables de usuario [PREFIX/bin]
+--datadir=DIR				datos independientes de la arquitectura [PREFIX/share]
+--mandir=DIR				páginas de manual [DATADIR/man]
+--sysconfdir=DIR			directorio para archivos de configuración [/etc]
 
-  --build=build-alias    a cpu-vendor-opsys for the system where the application will be built
-  --host=host-alias      a cpu-vendor-opsys for the system where the application will run
-  --target=target-alias  the machine that CC will produce code for
+--build=alias-construcción	sistema (cpu-fabricante-so) donde se compilará la aplicación
+--host=alias-anfitrión		sistema (cpu-fabricante-so) donde se ejecutará la aplicación
+--target=alias-objetivo		máquina para la que CC generará código
 
-  --enable-debug         enable debugging
-  --enable-static        prepare for static build
+--enable-debug				activar depuración
+--enable-static				preparar compilación estática
 
-  --without-pam          disable pam support
-  --without-shadow       disable shadow support
+--without-pam				desactivar soporte PAM
+--without-shadow			desactivar soporte shadow
 
-  --with-timestamp       enable timestamp support
+--with-timestamp			activar soporte de marcas de tiempo
 
-  --uid-max=NUM          set UID_MAX (default 65535)
-  --gid-max=NUM          set GID_MAX (default 65535)
+--uid-max=NUM				establecer UID_MAX (por defecto 65535)
+--gid-max=NUM				establecer GID_MAX (por defecto 65535)
 
-  --help, -h             display this help and exit
+--help, -h					mostrar esta ayuda y salir
 EOF
 	exit 0
 }
@@ -63,9 +63,9 @@ for x; do
 	--with-timestamp) WITHOUT_TIMESTAMP= ;;
 	--without-timestamp) WITHOUT_TIMESTAMP=yes ;;
 	--uid-max) UID_MAX=$var ;;
-	--gid-max) UID_MAX=$var ;;
+	--gid-max) GID_MAX=$var ;;
 	--help|-h) usage ;;
-	*) die "Error: unknown option $opt" ;;
+	*) die "Error: opción desconocida $opt" ;;
 	esac
 done
 
@@ -106,9 +106,9 @@ OS_CFLAGS="-D__${OS}__"
 
 case "$OS" in
 	linux)
-		printf 'Setting UID_MAX\t\t\t\t%d.\n' "$UID_MAX" >&2
+		printf 'Estableciendo UID_MAX\t\t\t\t%d.\n' "$UID_MAX" >&2
 		printf '#define UID_MAX %s\n' "$UID_MAX" >>$CONFIG_H
-		printf 'Setting GID_MAX\t\t\t\t%d.\n' "$GID_MAX" >&2
+		printf 'Estableciendo GID_MAX\t\t\t\t%d.\n' "$GID_MAX" >&2
 		printf '#define GID_MAX %s\n' "$GID_MAX" >>$CONFIG_H
 		OS_CFLAGS="$OS_CFLAGS -D_DEFAULT_SOURCE -D_GNU_SOURCE"
 		;;
@@ -168,14 +168,14 @@ esac
 
 check_func() {
 	func="$1"; src="$2"; shift 2
-	printf 'Checking for %-14s\t\t' "$func ..." >&2
+	printf 'Comprobando %-14s\t\t' "$func ..." >&2
 	printf '%s\n' "$src" >"_$func.c"
 	$XCC "_$func.c" -o "_$func" 2>/dev/null
 	ret=$?
 	rm -f "_$func.c" "_$func"
 	upperfunc="$(printf '%s\n' "$func" | tr '[[:lower:]]' '[[:upper:]]')"
 	if [ $ret -eq 0 ]; then
-		printf 'yes.\n' >&2
+		printf 'sí.\n' >&2
 		printf '#define HAVE_%s\n' "$upperfunc" >>$CONFIG_H
 		return 0
 	else
@@ -529,9 +529,6 @@ int main(void) {
 }'
 check_func "login_cap_h" "$src"
 
-#
-#
-#
 src='
 #include <stdlib.h>
 int main(void){return 0;}
@@ -543,17 +540,17 @@ check_func "__attribute__" "$src" || {
 
 auth=$(authmethod)
 if [ $? -eq 0 ]; then
-	printf 'Using auth method\t\t\t%s.\n' "$auth" >&2
+	printf 'Usando método de autenticación\t\t\t%s.\n' "$auth" >&2
 else
-	printf 'Error auth method\t\t\n' >&2
+	printf 'Error: método de autenticación\n' >&2
 	exit 1
 fi
 
 persist=$(persistmethod)
 if [ $? -eq 0 ]; then
-	printf 'Using persist method\t\t\t%s.\n' "$persist" >&2
+	printf 'Usando método de persistencia\t\t\t%s.\n' "$persist" >&2
 else
-	printf 'Using persist method\t\t\tnone.\n' >&2
+	printf 'Usando método de persistencia\t\t\tninguno.\n' >&2
 fi
 
 printf '#define DOAS_CONF "%s/doas.conf"\n' "${SYSCONFDIR}" >>$CONFIG_H
